@@ -57,7 +57,7 @@ func main() {
 func getBooks(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Execute the SELECT query
-		rows, err := db.Query("SELECT * FROM books")
+		rows, err := db.Query("SELECT * FROM posts")
 		if err != nil {
 			log.Fatal(err)
 		}
