@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"net/http"
+	"posts/pkgs/config"
 )
 
 type ServerVersion struct {
@@ -12,7 +13,7 @@ type ServerVersion struct {
 
 func Version(w http.ResponseWriter, _ *http.Request) {
 	versionJSON, err := json.Marshal(ServerVersion{
-		Version: "v1",
+		Version: config.AppVersion,
 	})
 	if err != nil {
 		panic(err)
