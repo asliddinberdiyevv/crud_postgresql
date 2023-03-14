@@ -27,6 +27,7 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 
+	fmt.Println(os.Getenv("DATABASE_URL"))
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal(err)
