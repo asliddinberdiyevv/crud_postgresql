@@ -1,41 +1,44 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	v1 "posts/pkgs/api/v1"
+	"posts/pkgs/api"
+	"posts/pkgs/database"
 
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	godotenv.Load(".env")
-
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatal(err)
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("Load env error: %v\n", err)
 	}
-	defer db.Close()
-	err = db.Ping()
+
+	/* ---------- DATABASE ---------- */
+	db, err := database.New()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error verifying database: %v\n", err)
+		return
+	} else {
+		log.Println("Database is ready to use.")
 	}
-	fmt.Println("connected to database!")
 
-	router := mux.NewRouter()
-	router.HandleFunc("/", v1.Version).Methods("GET")
+	/* ---------- ROUTER ---------- */
+	router, err := api.NewRouter(db)
+	if err != nil {
+		log.Printf("Router: %v\n", err)
+	}
 
-	// server
+	/* ---------- SERVER ---------- */
 	var addr = ":" + os.Getenv("PORT")
 	server := http.Server{
 		Handler: router,
 		Addr:    addr,
 	}
-	// start the server
-	log.Fatal(server.ListenAndServe())
+	log.Printf("Server run port: %s\n", os.Getenv("PORT"))
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("Server: %v\n", err)
+	}
 }
