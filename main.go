@@ -23,9 +23,7 @@ type Book struct {
 var books []Book
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	godotenv.Load(".env")
 
 	fmt.Println(os.Getenv("DATABASE_URL"))
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
