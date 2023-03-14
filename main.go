@@ -25,7 +25,6 @@ var books []Book
 func main() {
 	godotenv.Load(".env")
 
-	fmt.Println(os.Getenv("DATABASE_URL"))
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal(err)
