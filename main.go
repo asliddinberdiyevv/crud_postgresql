@@ -12,9 +12,7 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("Load env error: %v\n", err)
-	}
+	godotenv.Load(".env")
 
 	/* ---------- DATABASE ---------- */
 	db, err := database.New()
