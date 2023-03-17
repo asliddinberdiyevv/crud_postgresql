@@ -7,9 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UserDB persist Users.
 type PostDB interface {
-	CreatePost(ctx context.Context, user *models.Post) error
+	CreatePost(ctx context.Context, post *models.Post) error
+	// GetListPost(ctx context.Context) ([]*models.Post, error)
+	GetPostByID(ctx context.Context, postID models.PostID) (*models.Post, error)
+	UpdatePost(ctx context.Context, post *models.Post) error
+	DeletePost(ctx context.Context, postID models.PostID) (bool, error)
 }
 
 const createPostQuery = `
@@ -17,7 +20,6 @@ const createPostQuery = `
 	VALUES (:post_name)
 	RETURNING post_id
 `
-
 func (d *database) CreatePost(ctx context.Context, post *models.Post) error {
 	rows, err := d.conn.NamedQueryContext(ctx, createPostQuery, post)
 	if rows != nil {
@@ -37,80 +39,66 @@ func (d *database) CreatePost(ctx context.Context, post *models.Post) error {
 	return nil
 }
 
-// const getUserByIDQuery = `
-// 	SELECT user_id, email, username, password_hash, created_at
-// 	FROM users
-// 	WHERE user_id = $1 AND deleted_at IS NULL;
-// `
-// func (d *database) GetUserByID(ctx context.Context, userID models.UserID) (*models.User, error) {
-// 	var user models.User
-// 	if err := d.conn.GetContext(ctx, &user, getUserByIDQuery, userID); err != nil {
-// 		return nil, err
-// 	}
+const listPostQuery = `
+	SELECT post_id, post_name, post_like, post_star, created_at
+	FROM posts
+	WHERE deleted_at IS NULL;
+`
+func (d *database) ListPost(ctx context.Context) ([]*models.Post, error) {
+	var posts []*models.Post
+	if err := d.conn.SelectContext(ctx, &posts, listPostQuery); err != nil {
+		return nil, errors.Wrap(err, "could not get posts")
+	}
+	return posts, nil
+}
 
-// 	return &user, nil
-// }
-// const getUserByUsernameQuery = `
-// 	SELECT user_id, email, username, password_hash, created_at
-// 	FROM users
-// 	WHERE username = $1 AND deleted_at IS NULL;
-// `
-// func (d *database) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
-// 	var user models.User
-// 	if err := d.conn.GetContext(ctx, &user, getUserByUsernameQuery, username); err != nil {
-// 		return nil, err
-// 	}
+const getPostByIDQuery = `
+	SELECT post_id, post_name, post_like, post_star, created_at
+	FROM posts
+	WHERE post_id = $1 AND deleted_at IS NULL;
+`
+func (d *database) GetPostByID(ctx context.Context, postID models.PostID) (*models.Post, error) {
+	var post models.Post
+	if err := d.conn.GetContext(ctx, &post, getPostByIDQuery, postID); err != nil {
+		return nil, err
+	}
+	return &post, nil
+}
 
-// 	return &user, nil
-// }
-// const listUsersQuery = `
-// 	SELECT user_id, email, username, password_hash, created_at
-// 	FROM users
-// 	WHERE deleted_at IS NULL;
-// `
-// func (d *database) ListUsers(ctx context.Context) ([]*models.User, error) {
-// 	var users []*models.User
-// 	if err := d.conn.SelectContext(ctx, &users, listUsersQuery); err != nil {
-// 		return nil, errors.Wrap(err, "could not get users")
-// 	}
-// 	return users, nil
-// }
-// const updateUserQuery = `
-// 	UPDATE users
-// 	SET username = :username,
-// 	 		password_hash = :password_hash
-// 	WHERE user_id = :user_id;
-// `
-// func (d *database) UpdateUser(ctx context.Context, user *models.User) error {
-// 	result, err := d.conn.NamedExecContext(ctx, updateUserQuery, user)
-// 	if err != nil {
-// 		return err
-// 	}
+const updatePostQuery = `
+	UPDATE posts
+	SET post_name = :post_name,
+	 		post_like = :post_like,
+			post_star = :post_star
+	WHERE post_id = :post_id;
+`
+func (d *database) UpdatePost(ctx context.Context, post *models.Post) error {
+	result, err := d.conn.NamedExecContext(ctx, updatePostQuery, post)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		return errors.New("Post not found")
+	}
+	return nil
+}
 
-// 	rows, err := result.RowsAffected()
-// 	if err != nil || rows == 0 {
-// 		return errors.New("User not found")
-// 	}
+const DeletePostQuery = `
+	UPDATE posts
+	SET deleted_at = NOW()
+	WHERE post_id = $1 AND deleted_at IS NULL;
+`
+func (d *database) DeletePost(ctx context.Context, postID models.PostID) (bool, error) {
+	result, err := d.conn.ExecContext(ctx, DeletePostQuery, postID)
+	if err != nil {
+		return false, err
+	}
 
-// 	return nil
-// }
-// const DeleteUserQuery = `
-// 	UPDATE users
-// 	SET deleted_at = NOW(),
-// 			email = CONCAT(email, '-DELETED-', uuid_generate_v4()),
-// 			username = CONCAT(username, '-DELETED-', uuid_generate_v4())
-// 	WHERE user_id = $1 AND deleted_at IS NULL;
-// `
-// func (d *database) DeleteUser(ctx context.Context, userID models.UserID) (bool, error) {
-// 	result, err := d.conn.ExecContext(ctx, DeleteUserQuery, userID)
-// 	if err != nil {
-// 		return false, err
-// 	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
 
-// 	rows, err := result.RowsAffected()
-// 	if err != nil {
-// 		return false, err
-// 	}
-
-// 	return rows > 0, nil
-// }
+	return rows > 0, nil
+}

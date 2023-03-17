@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: SKCNCgLho6Q8bw4k-4BbC9_sYgIbT-ta
+      POSTGRES_USER: edmndvwu
+      POSTGRES_DB: edmndvwu
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://edmndvwu:SKCNCgLho6Q8bw4k-4BbC9_sYgIbT-ta@rosie.db.elephantsql.com/edmndvwu
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    

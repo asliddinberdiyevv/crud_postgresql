@@ -8,6 +8,10 @@ type API struct {
 	Func   http.HandlerFunc
 }
 
+type ActDeleted struct {
+	Deleted bool `json:"deleted"`
+}
+
 func NewAPI(path string, method string, handlerFunc http.HandlerFunc) API {
 	return API{path, method, handlerFunc}
 }
