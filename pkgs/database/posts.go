@@ -9,7 +9,7 @@ import (
 
 type PostDB interface {
 	CreatePost(ctx context.Context, post *models.Post) error
-	// GetListPost(ctx context.Context) ([]*models.Post, error)
+	GetListPost(ctx context.Context) ([]*models.Post, error)
 	GetPostByID(ctx context.Context, postID models.PostID) (*models.Post, error)
 	UpdatePost(ctx context.Context, post *models.Post) error
 	DeletePost(ctx context.Context, postID models.PostID) (bool, error)
@@ -20,6 +20,7 @@ const createPostQuery = `
 	VALUES (:post_name)
 	RETURNING post_id
 `
+
 func (d *database) CreatePost(ctx context.Context, post *models.Post) error {
 	rows, err := d.conn.NamedQueryContext(ctx, createPostQuery, post)
 	if rows != nil {
@@ -39,14 +40,15 @@ func (d *database) CreatePost(ctx context.Context, post *models.Post) error {
 	return nil
 }
 
-const listPostQuery = `
-	SELECT post_id, post_name, post_like, post_star, created_at
+const listPostByIDQuery = `
+	SELECT post_id, post_name, post_like, post_star, created_at, deleted_at
 	FROM posts
 	WHERE deleted_at IS NULL;
 `
-func (d *database) ListPost(ctx context.Context) ([]*models.Post, error) {
+
+func (d *database) GetListPost(ctx context.Context) ([]*models.Post, error) {
 	var posts []*models.Post
-	if err := d.conn.SelectContext(ctx, &posts, listPostQuery); err != nil {
+	if err := d.conn.SelectContext(ctx, &posts, listPostByIDQuery); err != nil {
 		return nil, errors.Wrap(err, "could not get posts")
 	}
 	return posts, nil
@@ -57,6 +59,7 @@ const getPostByIDQuery = `
 	FROM posts
 	WHERE post_id = $1 AND deleted_at IS NULL;
 `
+
 func (d *database) GetPostByID(ctx context.Context, postID models.PostID) (*models.Post, error) {
 	var post models.Post
 	if err := d.conn.GetContext(ctx, &post, getPostByIDQuery, postID); err != nil {
@@ -72,6 +75,7 @@ const updatePostQuery = `
 			post_star = :post_star
 	WHERE post_id = :post_id;
 `
+
 func (d *database) UpdatePost(ctx context.Context, post *models.Post) error {
 	result, err := d.conn.NamedExecContext(ctx, updatePostQuery, post)
 	if err != nil {
@@ -89,6 +93,7 @@ const DeletePostQuery = `
 	SET deleted_at = NOW()
 	WHERE post_id = $1 AND deleted_at IS NULL;
 `
+
 func (d *database) DeletePost(ctx context.Context, postID models.PostID) (bool, error) {
 	result, err := d.conn.ExecContext(ctx, DeletePostQuery, postID)
 	if err != nil {

@@ -22,7 +22,7 @@ func SetPostAPI(db database.Database, router *mux.Router) {
 
 	apis := []API{
 		NewAPI("/posts", "POST", api.Create),
-		// NewAPI("/posts", "GET", api.List),
+		NewAPI("/posts", "GET", api.List),
 		NewAPI("/posts/{postID}", "GET", api.Get),
 		NewAPI("/posts/{postID}", "PATCH", api.Update),
 		NewAPI("/posts/{postID}", "DELETE", api.Delete),
@@ -62,19 +62,19 @@ func (api *PostAPI) Create(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, createdPost)
 }
 
-// func (api *PostAPI) List(w http.ResponseWriter, r *http.Request) {
-// 	ctx := r.Context()
-// 	posts, err := api.DB.GetListPost(ctx)
-// 	if err != nil {
-// 		utils.ResponseErr(err, w, "Error getting posts.", http.StatusConflict)
-// 		return
-// 	}
-// 	if posts == nil {
-// 		posts = make([]*models.Post, 0)
-// 	}
-// 	log.Println("returned posts")
-// 	utils.WriteJSON(w, http.StatusOK, posts)
-// }
+func (api *PostAPI) List(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	posts, err := api.DB.GetListPost(ctx)
+	if err != nil {
+		utils.ResponseErr(err, w, "Error getting posts.", http.StatusConflict)
+		return
+	}
+	if posts == nil {
+		posts = make([]*models.Post, 0)
+	}
+	log.Println("returned posts")
+	utils.WriteJSON(w, http.StatusOK, posts)
+}
 
 func (api *PostAPI) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
