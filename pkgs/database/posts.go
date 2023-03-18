@@ -13,6 +13,7 @@ type PostDB interface {
 	GetPostByID(ctx context.Context, postID models.PostID) (*models.Post, error)
 	UpdatePost(ctx context.Context, post *models.Post) error
 	DeletePost(ctx context.Context, postID models.PostID) (bool, error)
+	SearchByName(ctx context.Context, postName string) ([]*models.Post, error)
 }
 
 const createPostQuery = `
@@ -40,7 +41,7 @@ func (d *database) CreatePost(ctx context.Context, post *models.Post) error {
 	return nil
 }
 
-const listPostByIDQuery = `
+const listPostQuery = `
 	SELECT post_id, post_name, post_like, post_star, created_at, deleted_at
 	FROM posts
 	WHERE deleted_at IS NULL;
@@ -48,7 +49,7 @@ const listPostByIDQuery = `
 
 func (d *database) GetListPost(ctx context.Context) ([]*models.Post, error) {
 	var posts []*models.Post
-	if err := d.conn.SelectContext(ctx, &posts, listPostByIDQuery); err != nil {
+	if err := d.conn.SelectContext(ctx, &posts, listPostQuery); err != nil {
 		return nil, errors.Wrap(err, "could not get posts")
 	}
 	return posts, nil
@@ -106,4 +107,18 @@ func (d *database) DeletePost(ctx context.Context, postID models.PostID) (bool, 
 	}
 
 	return rows > 0, nil
+}
+
+const SearchByNameQuery = `
+	SELECT *
+	FROM posts
+	WHERE post_name like '%' || $1 || '%' AND deleted_at IS NULL;
+	`
+
+func (d *database) SearchByName(ctx context.Context, postName string) ([]*models.Post, error) {
+	var posts []*models.Post
+	if err := d.conn.SelectContext(ctx, &posts, SearchByNameQuery, postName); err != nil {
+		return nil, errors.Wrap(err, "could not get posts")
+	}
+	return posts, nil
 }

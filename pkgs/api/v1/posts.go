@@ -63,12 +63,26 @@ func (api *PostAPI) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *PostAPI) List(w http.ResponseWriter, r *http.Request) {
+	var posts []*models.Post
+	var err error
+
 	ctx := r.Context()
-	posts, err := api.DB.GetListPost(ctx)
-	if err != nil {
-		utils.ResponseErr(err, w, "Error getting posts.", http.StatusConflict)
-		return
+	paramName := r.URL.Query().Get("name")
+	
+	if paramName != "" {
+		posts, err = api.DB.SearchByName(ctx, paramName)
+		if err != nil {
+			utils.ResponseErr(err, w, "Error getting posts.", http.StatusConflict)
+			return
+		}
+	} else {
+		posts, err = api.DB.GetListPost(ctx)
+		if err != nil {
+			utils.ResponseErr(err, w, "Error getting posts.", http.StatusConflict)
+			return
+		}
 	}
+
 	if posts == nil {
 		posts = make([]*models.Post, 0)
 	}
