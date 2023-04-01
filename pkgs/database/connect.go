@@ -22,7 +22,7 @@ func Connect() (*sqlx.DB, error) {
 		log.Printf("connect.go -> Connect(), Load env: %v", err)
 	}
 
-	conn, err := sqlx.Open("postgres", os.Getenv("DATABASE_URL"))
+	conn, err := sqlx.Open("postgres", os.Getenv("DB_URL"))
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not connect to database")
 	}
